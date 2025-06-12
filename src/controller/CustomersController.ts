@@ -11,6 +11,22 @@ export class CustomersController {
     }
     const { name } = event.queryStringParameters;
 
+    const lastName = '';
+
+    if (name && lastName) {
+      return this.apiResponseOk(
+        await this.service.findByFilterNameLastname(
+          new Customer({ name, lastName })
+        )
+      );
+    }
+
+    if (lastName) {
+      return this.apiResponseOk(
+        await this.service.findByFilterLastname(new Customer({ lastName }))
+      );
+    }
+
     return this.apiResponseOk(
       await this.service.findByFilter(new Customer({ name }))
     );
