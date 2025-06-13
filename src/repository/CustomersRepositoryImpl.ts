@@ -13,90 +13,70 @@ type RandomUser = {
   };
 };
 
+type Pagination = {
+  page: number;
+  gender: string;
+};
+
+type Response = {
+  page: number;
+  total: number;
+  data: Customer[];
+};
+
+const mapToCustomer = (user: RandomUser): Customer =>
+  new Customer({
+    id: user.id?.value ?? '',
+    name: user.name?.first ?? '',
+    lastName: user.name?.last ?? '',
+  });
+
 export class CustomersRepositoryImpl implements CustomersRepository {
-  // https://randomuser.me/api/?results=100&gender=male
   async findByFilter(customer: Customer): Promise<Customer[]> {
-    const result = await axios.get('https://randomuser.me/api/?results=100');
-    if (!result.data.results) {
-      return [];
-    }
+    const { data } = await axios.get('https://randomuser.me/api/?results=100');
 
-    return result.data.results
-      .filter((item: RandomUser) =>
-        item.name.first.toLowerCase().startsWith(customer.name.toLowerCase())
-      )
-      .map(
-        (item: RandomUser) =>
-          new Customer({
-            id: item.id.value,
-            name: item.name.first,
-            lastName: item.name.last,
-          })
-      );
+    const users: RandomUser[] = data?.results ?? [];
+
+    const nameFilter = customer.name?.toLowerCase() ?? '';
+    const lastNameFilter = customer.lastName?.toLowerCase() ?? '';
+
+    const filtered = users.filter((user) => {
+      const firstName = user.name?.first.toLowerCase() ?? '';
+      const lastName = user.name?.last.toLowerCase() ?? '';
+
+      if (firstName && lastName) {
+        return (
+          firstName.startsWith(nameFilter) &&
+          lastName.startsWith(lastNameFilter)
+        );
+      }
+
+      if (lastNameFilter) {
+        return lastName.startsWith(lastNameFilter);
+      }
+
+      if (nameFilter) {
+        return firstName.startsWith(nameFilter);
+      }
+
+      return true;
+    });
+
+    return filtered.map(mapToCustomer);
   }
 
-  async findByFilterLastname(customer: Customer): Promise<Customer[]> {
-    const result = await axios.get('https://randomuser.me/api/?results=100');
-    if (!result.data.results) {
-      return [];
-    }
-
-    return result.data.results
-      .filter((item: RandomUser) =>
-        item.name.last.toLowerCase().startsWith(customer.lastName.toLowerCase())
-      )
-      .map(
-        (item: RandomUser) =>
-          new Customer({
-            id: item.id.value,
-            name: item.name.first,
-            lastName: item.name.last,
-          })
-      );
-  }
-
-  async findByFilterNameLastname(customer: Customer): Promise<Customer[]> {
-    const result = await axios.get('https://randomuser.me/api/?results=100');
-    if (!result.data.results) {
-      return [];
-    }
-
-    return result.data.results
-      .filter(
-        (item: RandomUser) =>
-          item.name.first
-            .toLowerCase()
-            .startsWith(customer.name.toLowerCase()) &&
-          item.name.last
-            .toLowerCase()
-            .startsWith(customer.lastName.toLowerCase())
-      )
-      .map(
-        (item: RandomUser) =>
-          new Customer({
-            id: item.id.value,
-            name: item.name.first,
-            lastName: item.name.last,
-          })
-      );
-  }
-
-  async findByFilterByGender(customer: Customer): Promise<Customer[]> {
-    const result = await axios.get(
-      `https://randomuser.me/api/?results=100&gender=${customer.gender}`
+  async findByFilterGender(pagination: Pagination): Promise<Response> {
+    const { data } = await axios.get(
+      `https://randomuser.me/api/?page=${pagination.page}&results=10&gender=${pagination.gender}`
     );
 
-    if (!result.data.results) {
-      return [];
-    }
+    const users: RandomUser[] = data?.results ?? [];
+    const customers = users.map(mapToCustomer);
 
-    return result.data.results.map(
-      (item: RandomUser) =>
-        new Customer({
-          id: item.id.value,
-          name: item.name.first,
-          lastName: item.name.last,
-        })
-    );
+    return {
+      page: pagination.page,
+      total: customers.length,
+      data: customers,
+    };
   }
 }

@@ -14,24 +14,4 @@ export class CustomersServiceImpl implements CustomersService {
         })
     );
   }
-
-  async findByFilterLastname(customer: Customer): Promise<Customer[]> {
-    return (await this.repository.findByFilter(customer)).map(
-      (item) =>
-        new Customer({
-          ...item,
-          email: `${item.name.charAt(0)}${item.lastName}@ihfintech.com.pe`,
-        })
-    );
-  }
-
-  async findByFilterNameLastname(customer: Customer): Promise<Customer[]> {
-    return (await this.repository.findByFilter(customer)).map(
-      (item) =>
-        new Customer({
-          ...item,
-          email: `${item.name.charAt(0)}${item.lastName}@ihfintech.com.pe`,
-        })
-    );
-  }
 }
